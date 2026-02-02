@@ -15,7 +15,7 @@ import { useFormRendererStore } from "@/store/form-renderer-store"
 import { FormRenderer } from "@/components/FormRenderer"
 import { GenericItem, Note, DialogMode } from "../types"
 
-interface GenericDialogProps {
+interface ZoneDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   mode: DialogMode
@@ -33,7 +33,7 @@ interface GenericDialogProps {
   title?: string
 }
 
-export function GenericDialog({
+export function ZoneDialog({
   open,
   onOpenChange,
   mode,
@@ -45,7 +45,7 @@ export function GenericDialog({
   onEdit,
   onView,
   title = "Item",
-}: GenericDialogProps) {
+}: ZoneDialogProps) {
   const isImport = mode === "import"
   const isEdit = mode === "edit"
   const isView = mode === "view"

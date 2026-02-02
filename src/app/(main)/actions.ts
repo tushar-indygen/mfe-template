@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import fs from "node:fs/promises"
 import path from "node:path"
+import { revalidatePath } from "next/cache"
 
 const GATEWAY_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost"
 
@@ -63,10 +64,141 @@ export async function getItems(artifactId: string) {
             return []
         }
 
-        return data
+        // Map data to ensure consistent id field
+        return data.map((record: any) => {
+            const fields = record.data || record
+            return {
+                ...fields,
+                id: record.id || fields.id || fields.lead_id,
+                created_at: record.created_at || fields.created_at,
+                status: record.status || fields.status,
+            }
+        })
     } catch (error) {
         console.error("Failed to get items:", error)
         return []
+    }
+}
+
+export async function addItem(artifactId: string, itemData: any) {
+    try {
+        const payload = {
+            action: "SAVE",
+            artifact_id: artifactId,
+            data: itemData,
+        }
+
+        const headers = await getAuthHeaders()
+        const res = await fetch(`${GATEWAY_URL}/events/crud`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.status} ${res.statusText}`)
+        }
+
+        const json = await res.json()
+        revalidatePath("/")
+        return {
+            success: true,
+            item: { ...itemData, id: json.id },
+        }
+    } catch (error) {
+        console.error("Failed to add item:", error)
+        return { success: false, error: "Failed to add item" }
+    }
+}
+
+export async function updateItem(artifactId: string, itemData: any) {
+    try {
+        const { id, ...rest } = itemData
+        const payload = {
+            action: "UPDATE",
+            artifact_id: artifactId,
+            id: id,
+            data: {
+                id: id,
+                data: rest,
+            },
+        }
+
+        const headers = await getAuthHeaders()
+        const res = await fetch(`${GATEWAY_URL}/events/crud`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.status} ${res.statusText}`)
+        }
+
+        revalidatePath("/")
+        return { success: true, item: itemData }
+    } catch (error) {
+        console.error("Failed to update item:", error)
+        return { success: false, error: "Failed to update item" }
+    }
+}
+
+export async function deleteItem(artifactId: string, itemId: string) {
+    try {
+        const payload = {
+            action: "DELETE",
+            artifact_id: artifactId,
+            id: itemId,
+        }
+
+        const headers = await getAuthHeaders()
+        const res = await fetch(`${GATEWAY_URL}/events/crud`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.status} ${res.statusText}`)
+        }
+
+        revalidatePath("/")
+        return { success: true }
+    } catch (error) {
+        console.error("Failed to delete item:", error)
+        return { success: false, error: "Failed to delete item" }
+    }
+}
+
+export async function addNote(artifactId: string, noteData: {
+    item_id: string
+    content: string
+    created_by: string
+}) {
+    try {
+        const payload = {
+            action_id: "act_add_note", // Assuming this is the standard action_id for notes
+            artifact_id: artifactId,
+            payload: noteData,
+        }
+
+        const headers = await getAuthHeaders("POST")
+        const res = await fetch(`${GATEWAY_URL}/events/trigger`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+        })
+
+        if (!res.ok) {
+            throw new Error(`API error: ${res.status}`)
+        }
+
+        const json = await res.json()
+        revalidatePath("/")
+        return { success: true, note: { ...noteData, note_id: json.id } }
+    } catch (error) {
+        console.error("Failed to add note:", error)
+        return { success: false, error: "Failed to add note" }
     }
 }
 
@@ -112,3 +244,4 @@ export async function getWorkflow(id: string) {
         return null
     }
 }
+

@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
     output: "standalone",
     /* config options here */
     reactCompiler: true,
+    // Expose app name to client
+    env: {
+        NEXT_PUBLIC_APP_NAME: JSON.parse(require('fs').readFileSync('./package.json', 'utf8')).name,
+    },
     // Dynamic basePath from env
     basePath: process.env.BASE_PATH || "",
     assetPrefix: process.env.ASSET_PREFIX || undefined,

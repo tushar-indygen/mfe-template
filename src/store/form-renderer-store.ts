@@ -159,7 +159,7 @@ export const useFormRendererStore = create<FormRendererState>()(
         })),
     }),
     {
-      name: "lead-form-renderer-storage",
+      name: `${process.env.NEXT_PUBLIC_APP_NAME || "mfe"}-form-renderer-storage`,
       partialize: (state) => ({
         schema: state.schema,
         currentPageIndex: state.currentPageIndex,

@@ -100,7 +100,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
         })),
     }),
     {
-      name: "lead-preferences",
+      name: `${process.env.NEXT_PUBLIC_APP_NAME || "mfe"}-preferences`,
     }
   )
 )

@@ -38,6 +38,21 @@ export async function getAppName() {
     }
 }
 
+export async function getArtifactId() {
+    const basePath = process.env.BASE_PATH || ""
+    if (basePath) {
+        // Remove leading slash and handle potential multi-segment paths
+        return basePath.replace(/^\//, "")
+    }
+
+    try {
+        const name = await getAppName()
+        return name.toLowerCase().replace(/[\s]/g, "-")
+    } catch (error) {
+        return "mfe-template"
+    }
+}
+
 export async function getItems(artifactId: string) {
     try {
         const headers = await getAuthHeaders()
@@ -242,6 +257,27 @@ export async function getWorkflow(id: string) {
     } catch (error) {
         console.error("Failed to get workflow:", error)
         return null
+    }
+}
+
+export async function getWorkflows() {
+    try {
+        const headers = await getAuthHeaders("GET")
+        const res = await fetch(`${GATEWAY_URL}/metadata/workflows`, {
+            method: "POST",
+            headers,
+            cache: "no-store",
+        })
+
+        if (!res.ok) {
+            console.error("API Error fetching workflows", res.status)
+            return []
+        }
+
+        return await res.json()
+    } catch (error) {
+        console.error("Failed to get workflows:", error)
+        return []
     }
 }
 

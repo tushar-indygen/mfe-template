@@ -57,8 +57,8 @@ const findValueByKey = (obj: any, targetKey: string): any => {
 const collectLeafKeys = (obj: any, keys: Set<string>) => {
   if (!obj || typeof obj !== "object") return
   for (const k in obj) {
-    if (["metadata", "location", "id"].includes(k)) {
-      if (k === "metadata") {
+    if (["metadata", "location", "id", "data", "payload"].includes(k)) {
+      if (["metadata", "data", "payload", "location"].includes(k)) {
         collectLeafKeys(obj[k], keys)
       }
       continue
@@ -214,8 +214,7 @@ export function ZoneViews({
       if (ignoredKeys.has(key)) return
       result.push({
         id: key,
-        accessorFn: (row: any) =>
-          row[key] !== undefined ? row[key] : findValueByKey(row.metadata, key),
+        accessorFn: (row: any) => findValueByKey(row, key),
         header: ({ column }: any) => {
           const title =
             fieldIdToLabel[key] ||
@@ -339,10 +338,10 @@ export function ZoneViews({
               renderCard={(item: any) => (
                 <div className="space-y-2">
                   <div className="font-medium text-sm line-clamp-1">
-                    {item.name || item.id}
+                    {findValueByKey(item, "name") || item.id}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {item.email || ""}
+                    {findValueByKey(item, "email") || ""}
                   </div>
                 </div>
               )}

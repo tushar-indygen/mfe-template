@@ -69,6 +69,19 @@ const AlertDialog: React.FC<{
   </Dialog>
 )
 
+const findValueByKey = (obj: any, targetKey: string): any => {
+  if (!obj || typeof obj !== "object") return undefined
+  if (targetKey in obj) return obj[targetKey]
+  for (const k in obj) {
+    const val = obj[k]
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      const found = findValueByKey(val, targetKey)
+      if (found !== undefined) return found
+    }
+  }
+  return undefined
+}
+
 const DEFAULT_PATTERNS: Record<string, string> = {
   pan_card: "^[A-Z]{5}[0-9]{4}[A-Z]{1}$",
   aadhaar: "^[2-9]{1}[0-9]{11}$",
@@ -291,7 +304,11 @@ export const FormRenderer = ({
           <SensitiveDisplay
             isEditable={!readOnly}
             placeholder={placeholder}
-            value={formValues[field.id] || ""}
+            value={
+              formValues[field.id] !== undefined
+                ? formValues[field.id]
+                : findValueByKey(formValues, field.id) || ""
+            }
             onValueChange={(val) => handleInputChange(field.id, val)}
             disabled={readOnly}
             inputClassName={errors[field.id] ? "border-red-500" : ""}
@@ -309,7 +326,11 @@ export const FormRenderer = ({
           id={field.id}
           type={type}
           placeholder={placeholder}
-          value={formValues[field.id] || ""}
+          value={
+            formValues[field.id] !== undefined
+              ? formValues[field.id]
+              : findValueByKey(formValues, field.id) || ""
+          }
           onChange={(e) => handleInputChange(field.id, e.target.value)}
           required={field.required}
           disabled={readOnly}
@@ -327,14 +348,22 @@ export const FormRenderer = ({
       <Input
         id={field.id}
         placeholder="First Name"
-        value={formValues[`${field.id}_first`] || ""}
+        value={
+          formValues[`${field.id}_first`] !== undefined
+            ? formValues[`${field.id}_first`]
+            : findValueByKey(formValues, `${field.id}_first`) || ""
+        }
         onChange={(e) => handleInputChange(`${field.id}_first`, e.target.value)}
         required={field.required}
         disabled={readOnly}
       />
       <Input
         placeholder="Last Name"
-        value={formValues[`${field.id}_last`] || ""}
+        value={
+          formValues[`${field.id}_last`] !== undefined
+            ? formValues[`${field.id}_last`]
+            : findValueByKey(formValues, `${field.id}_last`) || ""
+        }
         onChange={(e) => handleInputChange(`${field.id}_last`, e.target.value)}
         required={field.required}
         disabled={readOnly}
@@ -544,7 +573,11 @@ export const FormRenderer = ({
             id={field.id}
             className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Long answer text"
-            value={formValues[field.id] || ""}
+            value={
+              formValues[field.id] !== undefined
+                ? formValues[field.id]
+                : findValueByKey(formValues, field.id) || ""
+            }
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             required={field.required}
             disabled={readOnly}
@@ -559,7 +592,11 @@ export const FormRenderer = ({
           <select
             id={field.id}
             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={formValues[field.id] || ""}
+            value={
+              formValues[field.id] !== undefined
+                ? formValues[field.id]
+                : findValueByKey(formValues, field.id) || ""
+            }
             onChange={(e) => handleInputChange(field.id, e.target.value)}
             required={field.required}
             disabled={readOnly}
@@ -583,7 +620,11 @@ export const FormRenderer = ({
                   id={`${field.id}-${i}`}
                   name={field.id}
                   value={opt}
-                  checked={formValues[field.id] === opt}
+                  checked={
+                    (formValues[field.id] !== undefined
+                      ? formValues[field.id]
+                      : findValueByKey(formValues, field.id)) === opt
+                  }
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
                   className="h-4 w-4 border-primary text-primary ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   disabled={readOnly}
@@ -608,7 +649,9 @@ export const FormRenderer = ({
                 type="button"
                 onClick={() => !readOnly && handleInputChange(field.id, star)}
                 className={`text-2xl focus:outline-none transition-colors ${
-                  (formValues[field.id] || 0) >= star
+                  (formValues[field.id] !== undefined
+                    ? formValues[field.id]
+                    : findValueByKey(formValues, field.id) || 0) >= star
                     ? "text-yellow-400"
                     : "text-muted-foreground/30 hover:text-yellow-200"
                 } ${readOnly ? "cursor-not-allowed opacity-70" : ""}`}
@@ -631,7 +674,11 @@ export const FormRenderer = ({
               type="range"
               min={field.min ?? 0}
               max={field.max ?? 100}
-              value={formValues[field.id] ?? field.min ?? 0}
+              value={
+                formValues[field.id] !== undefined
+                  ? formValues[field.id]
+                  : (findValueByKey(formValues, field.id) ?? field.min ?? 0)
+              }
               onChange={(e) => handleInputChange(field.id, e.target.value)}
               className="w-full"
               disabled={readOnly}

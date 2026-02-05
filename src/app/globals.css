@@ -1,4 +1,5 @@
-@source "../../node_modules/crm-base-ui/dist*.js";
+@source "../../node_modules/crm-base-ui/dist/**/*.js";
+@import "../../node_modules/crm-base-ui/dist/assets/global.css";
 @import "tailwindcss";
 @import "tw-animate-css";
 

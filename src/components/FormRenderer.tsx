@@ -69,14 +69,29 @@ const AlertDialog: React.FC<{
   </Dialog>
 )
 
-const findValueByKey = (obj: any, targetKey: string): any => {
+const findValueByKey = (
+  obj: any,
+  targetKey: string,
+  visited = new Set()
+): any => {
   if (!obj || typeof obj !== "object") return undefined
+  if (visited.has(obj)) return undefined // Cycle detection
+  visited.add(obj)
+
   if (targetKey in obj) return obj[targetKey]
-  for (const k in obj) {
-    const val = obj[k]
-    if (val && typeof val === "object" && !Array.isArray(val)) {
-      const found = findValueByKey(val, targetKey)
+
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      const found = findValueByKey(item, targetKey, visited)
       if (found !== undefined) return found
+    }
+  } else {
+    for (const k in obj) {
+      const val = obj[k]
+      if (val && typeof val === "object") {
+        const found = findValueByKey(val, targetKey, visited)
+        if (found !== undefined) return found
+      }
     }
   }
   return undefined

@@ -25,7 +25,8 @@
       "adminOnly": true,
       "icon": "LayoutGrid",
       "label": "App Studio",
-      "path": "/app-studio"
+      "path": "/app-studio",
+      "external": true
     },
 
     {

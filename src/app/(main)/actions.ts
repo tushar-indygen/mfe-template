@@ -11,12 +11,25 @@ async function getAuthHeaders(xMethod?: "GET" | "POST" | "PUT" | "DELETE") {
     const session = await auth()
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        "X-User": JSON.stringify({
-            sub: "alice",
+    }
+
+    if (session?.user) {
+        headers["X-User"] = JSON.stringify({
+            sub: session.user.id || (session.user as any).sub,
+            email: session.user.email,
+            name: session.user.name,
+            tenant_id: (session.user as any).tenant_id || "default",
+            realm_access: (session.user as any).realm_access || { roles: [] },
+        })
+    } else if (process.env.NEXT_PUBLIC_DISABLE_AUTH === "true") {
+        // Fallback for development only
+        headers["X-User"] = JSON.stringify({
+            sub: "dev-user",
             tenant_id: "default",
             realm_access: { roles: ["admin", "editor"] },
-        }),
+        })
     }
+
     if (xMethod) {
         headers["X-Method"] = xMethod
     }
@@ -26,15 +39,48 @@ async function getAuthHeaders(xMethod?: "GET" | "POST" | "PUT" | "DELETE") {
     return headers
 }
 
-export async function getAppName() {
+export async function getAppInfo() {
+    const basePath = process.env.BASE_PATH || ""
+    const zoneId = basePath.replace(/^\//, "") || "mfe-template"
+
+    try {
+        const { headers } = await import("next/headers")
+        const h = headers()
+        const host = h.get("x-forwarded-host") || h.get("host")
+        const proto = h.get("x-forwarded-proto") || "http"
+        const origin =
+            (host ? `${proto}://${host}` : "") ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            "http://localhost:3000"
+
+        const res = await fetch(`${origin}/api/zones/${zoneId}`, {
+            cache: "no-store",
+        })
+        if (res.ok) {
+            const zone = await res.json()
+            if (zone?.app_name && zone?.app_id) {
+                return {
+                    appName: zone.app_name as string,
+                    appId: zone.app_id as string,
+                }
+            }
+        }
+    } catch {
+        // Fall back to package.json below
+    }
+
     try {
         const packageJsonPath = path.join(process.cwd(), "package.json")
         const fileContent = await fs.readFile(packageJsonPath, "utf-8")
         const packageJson = JSON.parse(fileContent)
-        return packageJson.name
+        const pkgName = packageJson.name || "mfe-template"
+        return {
+            appName: pkgName,
+            appId: pkgName,
+        }
     } catch (error) {
         console.error("Failed to read package.json:", error)
-        return "mfe-template"
+        return { appName: "mfe-template", appId: "mfe-template" }
     }
 }
 
@@ -46,8 +92,8 @@ export async function getArtifactId() {
     }
 
     try {
-        const name = await getAppName()
-        return name.toLowerCase().replace(/[\s]/g, "-")
+        const info = await getAppInfo()
+        return info.appId.toLowerCase().replace(/[\s]/g, "-")
     } catch (error) {
         return "mfe-template"
     }
@@ -280,4 +326,3 @@ export async function getWorkflows() {
         return []
     }
 }
-

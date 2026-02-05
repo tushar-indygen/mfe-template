@@ -56,7 +56,11 @@ const getIcon = (name: string) => {
   return iconCache.get(name)
 }
 
-const isExternal = (path: string) => !path.startsWith("/lead")
+const isExternal = (path: string) => {
+  const internalRoutes = []
+  if (path === "/") return false
+  return !internalRoutes.some((route) => path.startsWith(route))
+}
 
 export function AppSidebar({
   user,
@@ -105,19 +109,14 @@ export function AppSidebar({
               })
               .map((item) => {
                 const Icon = getIcon(item.icon) || LayoutList
-                let fullPathname = pathname
-                if (!pathname.startsWith("/lead")) {
-                  fullPathname = pathname === "/" ? "/lead" : `/lead${pathname}`
-                }
-
                 const isActive =
-                  fullPathname === item.path ||
-                  fullPathname?.startsWith(`${item.path}/`)
+                  pathname === item.path ||
+                  pathname?.startsWith(`${item.path}/`)
 
                 return (
                   <SidebarMenuItem key={item.path}>
                     <SidebarMenuButton asChild isActive={isActive}>
-                      {isExternal(item.path) ? (
+                      {(item as any).external || isExternal(item.path) ? (
                         <a href={item.path}>
                           <Icon width={40} height={40} />
                           <div className="grid flex-1 text-left text-md leading-tight">

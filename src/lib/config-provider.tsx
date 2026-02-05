@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from "react"
-import { loadRemoteConfig, getAppConfig } from "@/config"
+import { getAppConfig, getSidebarConfigFromLocalStorage } from "@/config"
 import type { AppConfig } from "@/config"
 
 // Create context with synchronous fallback local config
@@ -15,9 +15,10 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
   const [config, setConfig] = useState<AppConfig>(getAppConfig())
 
   useEffect(() => {
-    loadRemoteConfig().then((remote) => {
-      setConfig({ ...remote })
-    })
+    const storedSidebar = getSidebarConfigFromLocalStorage()
+    if (storedSidebar) {
+      setConfig((prev) => ({ ...prev, sidebar: storedSidebar }))
+    }
   }, [])
 
   return (

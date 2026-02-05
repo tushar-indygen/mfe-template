@@ -7,7 +7,7 @@ import { Plus } from "lucide-react"
 import { ZoneDialog } from "./_components/ZoneDialog"
 import { ZoneViews } from "./_components/ZoneViews"
 import {
-  getAppName,
+  getAppInfo,
   getArtifact,
   getWorkflow,
   getItems,
@@ -44,16 +44,13 @@ export default function Home() {
 
   const loadData = useCallback(async () => {
     try {
-      const name = await getAppName()
-      setRawAppName(name)
+      const info = await getAppInfo()
+      setRawAppName(info.appId)
+      setAppName(info.appName)
 
-      const formattedName = name
-        .split(/[-_\s]/)
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-      setAppName(formattedName)
-
-      const derivedArtifactId = name.toLowerCase().replaceAll(/[-\s]/g, "_")
+      const derivedArtifactId = info.appId
+        .toLowerCase()
+        .replaceAll(/[-\s]/g, "_")
       setArtifactId(derivedArtifactId)
 
       // Load items

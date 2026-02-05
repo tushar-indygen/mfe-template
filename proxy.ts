@@ -1,6 +1,36 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { auth } from "@/auth"
+const PUBLIC_ROUTES = ["/auth/signin", "/forgot-password"]
+const UNAUTHORIZED_REDIRECT = "/auth/signin"
 
-export function proxy(request: NextRequest) {
-  return NextResponse.next()
+export default auth((req) => {
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth && !(req.auth as any)?.error
+
+  const isPublicRoute = PUBLIC_ROUTES.some((route) =>
+    nextUrl.pathname.startsWith(route)
+  )
+  const isAuthRoute = nextUrl.pathname.startsWith("/api/auth")
+  const isPublicAsset =
+    /\.(svg|png|jpg|jpeg|gif|webp|ico|txt|xml|woff|woff2|ttf|otf)$/.test(
+      nextUrl.pathname
+    )
+
+  if (
+    isAuthRoute ||
+    isPublicRoute ||
+    isPublicAsset ||
+    process.env.NEXT_PUBLIC_DISABLE_AUTH === "true"
+  ) {
+    return
+  }
+
+  if (!isLoggedIn) {
+    return Response.redirect(
+      new URL(UNAUTHORIZED_REDIRECT, nextUrl)
+    )
+  }
+})
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 }

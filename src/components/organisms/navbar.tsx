@@ -5,7 +5,7 @@ import UserMenu from "@/components/molecules/user-menu"
 import BaseHeader from "@/components/molecules/base-header"
 import { useBrandingConfig, useUIConfig } from "@/hooks/use-config"
 import { UserModel } from "@/types/user"
-import type { UIHeaderConfig } from "@/config/config.types"
+import type { UIHeaderConfig } from "@/lib/config/types"
 import { RoleToggle } from "@/components/atoms/role-toggle"
 
 export default function Navbar({ user }: Readonly<{ user: UserModel | null }>) {

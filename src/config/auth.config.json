@@ -1,8 +1,0 @@
-{
-  "redirects": {
-    "afterLogin": "/",
-    "afterLogout": "/auth/signin",
-    "unauthorized": "/auth/signin"
-  },
-  "publicRoutes": ["/auth/signin", "/forgot-password"]
-}

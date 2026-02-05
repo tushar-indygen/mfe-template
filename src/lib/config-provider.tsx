@@ -1,8 +1,8 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from "react"
-import { getAppConfig, getSidebarConfigFromLocalStorage } from "@/config"
-import type { AppConfig } from "@/config"
+import { getAppConfig, isConfigStorageKey } from "@/lib/config/app-config"
+import type { AppConfig } from "@/lib/config/app-config"
 
 // Create context with synchronous fallback local config
 const ConfigContext = createContext<AppConfig>(getAppConfig())
@@ -15,9 +15,22 @@ export function ConfigProvider({ children }: ConfigProviderProps) {
   const [config, setConfig] = useState<AppConfig>(getAppConfig())
 
   useEffect(() => {
-    const storedSidebar = getSidebarConfigFromLocalStorage()
-    if (storedSidebar) {
-      setConfig((prev) => ({ ...prev, sidebar: storedSidebar }))
+    const refresh = () => {
+      setConfig(getAppConfig())
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (isConfigStorageKey(event.key)) {
+        refresh()
+      }
+    }
+
+    refresh()
+    window.addEventListener("storage", handleStorage)
+    window.addEventListener("config-refresh", refresh)
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      window.removeEventListener("config-refresh", refresh)
     }
   }, [])
 

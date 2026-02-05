@@ -58,12 +58,7 @@ export interface UIConfig {
     brandName: string
     shortName: string
   }
-  header: {
-    component: string
-    showLogo: boolean
-    showBrandName: boolean
-    rightComponents: string[]
-  }
+  header: UIHeaderConfig
   login: LoginConfig
   userMenu: {
     items: UserMenuItem[]
@@ -89,6 +84,7 @@ export interface ThemeConfig {
     }
   }
 }
+
 export interface AuthConfig {
   provider: string
   baseUrl: string

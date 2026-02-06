@@ -3,7 +3,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 export interface RolePreferences {
-  defaultView: "list" | "kanban" | "stats"
+  defaultView: "workflow" | "list" | "kanban" | "stats"
   isKanbanEnabled: boolean
   isListEnabled: boolean
 }
@@ -27,10 +27,10 @@ interface PreferencesStore {
   ) => void
   syncFromModulePreferences: () => void
   // Legacy support
-  defaultView: "list" | "kanban" | "stats"
+  defaultView: "workflow" | "list" | "kanban" | "stats"
   isKanbanEnabled: boolean
   isListEnabled: boolean
-  setDefaultView: (view: "list" | "kanban" | "stats") => void
+  setDefaultView: (view: "workflow" | "list" | "kanban" | "stats") => void
   setKanbanEnabled: (enabled: boolean) => void
   setListEnabled: (enabled: boolean) => void
 }
@@ -59,6 +59,11 @@ const normalizeAppKey = (value: string) => {
 }
 
 const APP_KEY = normalizeAppKey(RAW_APP_NAME)
+const getPathKey = () => {
+  if (typeof window === "undefined") return null
+  const segment = window.location.pathname.split("/").filter(Boolean)[0]
+  return segment ? normalizeAppKey(segment) : null
+}
 const STORAGE_KEY = `${APP_KEY}-preferences`
 const MODULE_PREFERENCES_KEYS = ["module-preferences", "module-preference"]
 
@@ -73,13 +78,22 @@ const readModulePreferences = (): ModulePreferences | null => {
       const modules = parsed?.state?.modules ?? parsed?.modules
       if (!modules || typeof modules !== "object") continue
 
+      const pathKey = getPathKey()
+      const rawPathKey =
+        typeof window !== "undefined"
+          ? window.location.pathname.split("/").filter(Boolean)[0]
+          : null
       const candidates = [
         APP_KEY,
         RAW_APP_NAME,
         RAW_APP_NAME.toLowerCase(),
         RAW_APP_NAME.replaceAll("-", "_"),
+        pathKey,
+        rawPathKey,
+        rawPathKey ? rawPathKey.toLowerCase() : null,
+        rawPathKey ? rawPathKey.replaceAll("-", "_") : null,
       ]
-      for (const candidate of candidates) {
+      for (const candidate of candidates.filter(Boolean) as string[]) {
         if (candidate && modules[candidate]) {
           return modules[candidate] as ModulePreferences
         }

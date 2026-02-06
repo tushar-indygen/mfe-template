@@ -1,6 +1,12 @@
 "use client"
 
-import React, { useState, useEffect, useCallback, useMemo } from "react"
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react"
 import { PageHeader, Button } from "crm-base-ui"
 import { Plus } from "lucide-react"
 
@@ -45,6 +51,7 @@ export default function Home() {
         : state.userSettings
   )
   const { defaultView, isKanbanEnabled, isListEnabled } = roleSettings
+  const openedWorkflowDefaultRef = useRef(false)
 
   const resolveTab = useCallback(
     (desired: string) => {
@@ -74,6 +81,24 @@ export default function Home() {
 
   const activeSchema = schema || defaultWorkflowSchema
   const activeTab = resolveTab(userTab ?? defaultView)
+
+  const openDialog = useCallback(
+    (mode: DialogMode, item: GenericItem | null = null) => {
+      setDialogMode(mode)
+      setSelectedItem(item)
+      resetStore({ keepSchema: true })
+      setFormValues(item || {})
+      setDialogOpen(true)
+    },
+    [resetStore, setFormValues]
+  )
+
+  useEffect(() => {
+    if (openedWorkflowDefaultRef.current) return
+    if (defaultView !== "workflow") return
+    openedWorkflowDefaultRef.current = true
+    openDialog("create")
+  }, [defaultView, openDialog])
 
   const loadData = useCallback(
     async (options?: { forceRefresh?: boolean }) => {
@@ -140,17 +165,6 @@ export default function Home() {
       window.removeEventListener("storage", handleStorage)
     }
   }, [loadData])
-
-  const openDialog = useCallback(
-    (mode: DialogMode, item: GenericItem | null = null) => {
-      setDialogMode(mode)
-      setSelectedItem(item)
-      resetStore({ keepSchema: true })
-      setFormValues(item || {})
-      setDialogOpen(true)
-    },
-    [resetStore, setFormValues]
-  )
 
   const handleDialogSubmit = async (data: any) => {
     try {

@@ -18,6 +18,8 @@ import {
 } from "./actions"
 import { useFormRendererStore } from "@/store/form-renderer-store"
 import { DialogMode, GenericItem, Note } from "./types"
+import { useUserRole } from "@/components/atoms/role-toggle-provider"
+import { usePreferencesStore } from "@/store/preferences-store"
 
 export default function Home() {
   const [appName, setAppName] = useState("MFE Application")
@@ -28,7 +30,32 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState<GenericItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<DialogMode>("create")
-  const [activeTab, setActiveTab] = useState("list")
+  const [userTab, setUserTab] = useState<string | undefined>(undefined)
+  const { role } = useUserRole()
+  const roleSettings = usePreferencesStore((state) =>
+    role === "admin"
+      ? state.adminSettings
+      : role === "srm"
+        ? state.srmSettings
+        : state.userSettings
+  )
+  const { defaultView, isKanbanEnabled, isListEnabled } = roleSettings
+
+  const resolveTab = useCallback(
+    (desired: string) => {
+      const allowed: string[] = []
+      if (isListEnabled) allowed.push("list")
+      if (isKanbanEnabled) allowed.push("kanban")
+      if (role === "admin") allowed.push("stats")
+
+      if (allowed.includes(desired)) return desired
+      if (role === "admin" && allowed.includes("stats")) return "stats"
+      if (allowed.includes("list")) return "list"
+      if (allowed.includes("kanban")) return "kanban"
+      return role === "admin" ? "stats" : "list"
+    },
+    [role, isKanbanEnabled, isListEnabled]
+  )
 
   // Zustand Store for Dynamic Workflows
   const {
@@ -41,6 +68,7 @@ export default function Home() {
   } = useFormRendererStore()
 
   const activeSchema = schema || defaultWorkflowSchema
+  const activeTab = resolveTab(userTab ?? defaultView)
 
   const loadData = useCallback(async () => {
     try {
@@ -196,7 +224,7 @@ export default function Home() {
         onView={(item) => openDialog("view", item)}
         onDelete={handleDeleteItem}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={setUserTab}
         schema={activeSchema}
         stats={stats}
         title={appName}

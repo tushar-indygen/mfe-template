@@ -15,12 +15,14 @@ import {
   UserRoleProvider,
   useUserRole,
 } from "@/components/atoms/role-toggle-provider"
+import { usePreferencesSync } from "@/store/preferences-store"
 
 function MainLayoutContent({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  usePreferencesSync()
   const { effectiveUser } = useUserRole()
 
   return (

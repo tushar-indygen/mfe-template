@@ -86,7 +86,11 @@ export function ZoneViews({
 }: ZoneViewsProps) {
   const { role } = useUserRole()
   const settings = usePreferencesStore((state) =>
-    role === "admin" ? state.adminSettings : state.userSettings
+    role === "admin"
+      ? state.adminSettings
+      : role === "srm"
+        ? state.srmSettings
+        : state.userSettings
   )
   const { isKanbanEnabled, isListEnabled } = settings
   const { isAdminMode } = usePreferencesStore()

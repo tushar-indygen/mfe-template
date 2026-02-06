@@ -16,6 +16,11 @@ import {
   deleteItem,
   addNote,
 } from "./actions"
+import {
+  clearAppInfoCache,
+  getCachedAppInfo,
+  isAppInfoCacheKey,
+} from "@/lib/app-info-cache"
 import { useFormRendererStore } from "@/store/form-renderer-store"
 import { DialogMode, GenericItem, Note } from "./types"
 import { useUserRole } from "@/components/atoms/role-toggle-provider"
@@ -70,47 +75,70 @@ export default function Home() {
   const activeSchema = schema || defaultWorkflowSchema
   const activeTab = resolveTab(userTab ?? defaultView)
 
-  const loadData = useCallback(async () => {
-    try {
-      const info = await getAppInfo()
-      setRawAppName(info.appId)
-      setAppName(info.appName)
+  const loadData = useCallback(
+    async (options?: { forceRefresh?: boolean }) => {
+      try {
+        const info = await getCachedAppInfo(getAppInfo, options)
+        setRawAppName(info.appId)
+        setAppName(info.appName)
 
-      const derivedArtifactId = info.appId
-        .toLowerCase()
-        .replaceAll(/[-\s]/g, "_")
-      setArtifactId(derivedArtifactId)
+        const derivedArtifactId = info.appId
+          .toLowerCase()
+          .replaceAll(/[-\s]/g, "_")
+        setArtifactId(derivedArtifactId)
 
-      // Load items
-      const fetchedItems = await getItems(derivedArtifactId)
-      setItems(fetchedItems)
+        // Load items
+        const fetchedItems = await getItems(derivedArtifactId)
+        setItems(fetchedItems)
 
-      // Load artifact and workflow
-      const artifact = await getArtifact(derivedArtifactId)
-      if (artifact?.workflow_id?.length) {
-        const workflowId = artifact.workflow_id[0]
-        const workflow = await getWorkflow(workflowId)
+        // Load artifact and workflow
+        const artifact = await getArtifact(derivedArtifactId)
+        if (artifact?.workflow_id?.length) {
+          const workflowId = artifact.workflow_id[0]
+          const workflow = await getWorkflow(workflowId)
 
-        if (workflow?.data) {
-          const workflowSchema = {
-            ...workflow.data,
-            metadata: {
-              ...(workflow.metadata || {}),
-              id: workflow.id,
-              formId: workflow.id,
-            },
+          if (workflow?.data) {
+            const workflowSchema = {
+              ...workflow.data,
+              metadata: {
+                ...(workflow.metadata || {}),
+                id: workflow.id,
+                formId: workflow.id,
+              },
+            }
+            setSchema(workflowSchema)
+            setAsDefaultWorkflow(workflow.id, workflowSchema)
           }
-          setSchema(workflowSchema)
-          setAsDefaultWorkflow(workflow.id, workflowSchema)
         }
+      } catch (error) {
+        console.error("Failed to load app data:", error)
       }
-    } catch (error) {
-      console.error("Failed to load app data:", error)
-    }
-  }, [setSchema, setAsDefaultWorkflow])
+    },
+    [setSchema, setAsDefaultWorkflow]
+  )
 
   useEffect(() => {
     loadData()
+  }, [loadData])
+
+  useEffect(() => {
+    const handleConfigRefresh = () => {
+      clearAppInfoCache()
+      loadData({ forceRefresh: true })
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (isAppInfoCacheKey(event.key) && event.newValue === null) {
+        loadData({ forceRefresh: true })
+      }
+    }
+
+    window.addEventListener("config-refresh", handleConfigRefresh)
+    window.addEventListener("storage", handleStorage)
+    return () => {
+      window.removeEventListener("config-refresh", handleConfigRefresh)
+      window.removeEventListener("storage", handleStorage)
+    }
   }, [loadData])
 
   const openDialog = useCallback(
